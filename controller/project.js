@@ -21,18 +21,30 @@ exports.getProjects = async (_, args, context) => {
     const pageSize = args.limit || 10;
     const result = await Project.paginate({}, { page: pageNumber, limit: pageSize });
     const { docs: projects, totalDocs: totalData, limit, page: currentPage, totalPages } = result;
-    console.log("result", result);
     return { projects, totalData, limit, currentPage, totalPages };
 }
 
 exports.updateProject = async (_, args, context) => {
     await checkAuthentication(context?.token);
     let { projectName, language, clients, projectManager, startDate, endDate, submitDate, status, projectId } = args;
-    let check = await Project.findOne({ projectName });
-    if (check) {
-        throw new Error("Already exists!");
+
+    const updateFields = {};
+    if (projectName) updateFields.projectName = projectName;
+    if (language) updateFields.language = language;
+    if (clients) updateFields.clients = clients;
+    if (projectManager) updateFields.projectManager = projectManager;
+    if (startDate) updateFields.startDate = startDate;
+    if (endDate) updateFields.endDate = endDate;
+    if (submitDate) updateFields.submitDate = submitDate;
+    if (status) updateFields.status = status;
+
+    if (projectName) {
+        let check = await Project.findOne({ projectName });
+        if (check) {
+            throw new Error("Already exists!");
+        }
     }
-    await Project.findByIdAndUpdate(projectId, { projectName, language, clients, projectManager, startDate, endDate, submitDate, status }, { new: true });
+    await Project.findByIdAndUpdate(projectId, updateFields, { new: true });
     return "Updated successfully";
 }
 
@@ -51,6 +63,25 @@ exports.getProjectFindById = async (clientId, context) => {
     await checkAuthentication(context?.token);
     let projects = await Project.find({ clients: clientId });
     return projects;
+}
+
+exports.getProjectFindByIdForNotification = async (projectsId, context) => {
+    await checkAuthentication(context?.token);
+
+    // Validate input
+    if (!Array.isArray(projectsId) || projectsId.length === 0) {
+        throw new Error("No project IDs provided.");
+    }
+    // Find projects by their IDs
+    const projects = await Project.find({
+        _id: { $in: projectsId },
+    });
+
+    if (!projects || projects.length === 0) {
+        throw new Error("No projects found for the given IDs.");
+    }
+
+    return projects
 }
 
 exports.searchProjectDetails = async (_, args, context) => {
@@ -79,7 +110,6 @@ exports.searchProjectDetails = async (_, args, context) => {
     };
 
     const result = await Project.paginate(searchQuery, { page: pageNumber, limit: pageSize });
-    console.log("result", result);
     const { docs: projects, totalDocs: totalData, limit, page: currentPage, totalPages } = result;
     return { projects, totalData, limit, currentPage, totalPages };
 }

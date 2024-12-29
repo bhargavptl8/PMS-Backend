@@ -1,5 +1,6 @@
 const { createClient, getClients, getClientFindById, updateClient, deleteClient, searchClientDetails } = require("../../controller/client")
-const { createProject, getProjects, getProjectFindById, updateProject, deleteProject, searchProjectDetails } = require("../../controller/project")
+const { createNotifications, getNotifications } = require("../../controller/notification")
+const { createProject, getProjects, getProjectFindById, updateProject, deleteProject, searchProjectDetails, getProjectFindByIdForNotification } = require("../../controller/project")
 const { signup, login, getUsers, getUserFindById } = require("../../controller/user")
 // const { BigIntScalar } = require("../scalars/scalars")
 
@@ -13,14 +14,25 @@ const garaphQLResolvers = {
     editClient: updateClient,
     deleteClient: deleteClient,
     editProject: updateProject,
-    deleteProject: deleteProject
+    deleteProject: deleteProject,
+    registerNotification: createNotifications
   },
   Query: {
     users: getUsers,
     clients: getClients,
     projects: getProjects,
     searchClients: searchClientDetails,
-    searchProjects: searchProjectDetails
+    searchProjects: searchProjectDetails,
+    notifications: getNotifications
+  },
+  Notification: {
+    projects: async (notification, _, context) => {
+      return await getProjectFindByIdForNotification(notification?.projects, context)
+    },
+    manager: async (notification, _, context) => {
+      // return await getProjectFindByIdForNotification(notification?.projects, context)
+      return await getUserFindById(notification?.manager, context)
+    },
   },
   Project: {
     projectManager: async (project, _, context) => {

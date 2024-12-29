@@ -27,12 +27,25 @@ exports.getClients = async (_, args, context) => {
 
 exports.updateClient = async (_, args, context) => {
     await checkAuthentication(context?.token);
-    let { clientName, email, phone, goldDigger, clientId } = args;
-    let check = await Client.findOne({ email });
-    if (check) {
-        throw new Error("Already exist!");
+
+    const { clientName, email, phone, goldDigger, clientId } = args;
+
+    const updateFields = {};
+    if (clientName) updateFields.clientName = clientName;
+    if (email) updateFields.email = email;
+    if (phone) updateFields.phone = phone;
+    if (goldDigger) updateFields.goldDigger = goldDigger;
+
+    console.log("args", updateFields);
+
+    if (email) {
+        let check = await Client.findOne({ email });
+        if (check) {
+            throw new Error("Already exist!");
+        }
     }
-    let response = await Client.findByIdAndUpdate(clientId, { clientName, email, phone, goldDigger }, { new: true });
+
+    let response = await Client.findByIdAndUpdate(clientId, updateFields, { new: true });
     console.log("response", response);
     return "Updated successfully";
 }
